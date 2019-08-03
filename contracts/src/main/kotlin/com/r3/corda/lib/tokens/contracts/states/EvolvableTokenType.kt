@@ -14,7 +14,7 @@ import net.corda.core.identity.Party
  * in-lining a [LinearState] directly into the [NonFungibleToken] or [FungibleToken] state doesn't make much sense, as
  * you would have to perform a state update to change the token type. It makes more sense to include a pointer to the
  * token type instead. That's what [TokenPointer] is for. This way, the token can evolve independently to which party
- * currently owns (some amount) of the token. Because the [EvolvableTokenType] is not inlined into the
+ * currently owns (some percentageAmount) of the token. Because the [EvolvableTokenType] is not inlined into the
  * [NonFungibleToken] or [FungibleToken] state it does not sub-class [TokenType].
  */
 abstract class EvolvableTokenType : LinearState {

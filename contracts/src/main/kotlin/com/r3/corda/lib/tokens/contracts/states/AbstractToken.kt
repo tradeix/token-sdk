@@ -9,7 +9,7 @@ import net.corda.core.identity.Party
 
 /** Contains common token properties and functionality. */
 interface AbstractToken : ContractState {
-    /** The [AbstractParty] which is currently holding (some amount of) tokens. */
+    /** The [AbstractParty] which is currently holding (some percentageAmount of) tokens. */
     val holder: AbstractParty
 
     /**

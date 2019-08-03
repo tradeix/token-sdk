@@ -15,7 +15,7 @@ import java.math.BigDecimal
  * within the token type state. E.g. a stock symbol or ISIN. Note: Possible name confusion with corda core
  * "net.corda.corda.contracts.Issued" which is not used by the Token SDK.
  *
- * @property issuer the [Party] which has issued (some amount of) this [TokenType] on ledger. Note that, in the case of
+ * @property issuer the [Party] which has issued (some percentageAmount of) this [TokenType] on ledger. Note that, in the case of
  * the [TokenType] being a depositary receipt, the issuer is NOT the party with the ultimate liability, instead it is
  * always the party which issued the [TokenType] on ledger.
  * @property tokenType the [TokenType] to be associated with an issuing [Party].

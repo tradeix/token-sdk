@@ -186,7 +186,7 @@ class NonFungibleTokenTests : ContractTestCommon() {
             // Add the redeem command, signed by ALICE but not the issuer.
             tweak {
                 command(ALICE.publicKey, RedeemTokenCommand(issuedToken, inputs = listOf(0)))
-                this `fails with` "The issuer must be a signing party when an amount of tokens are redeemed"
+                this `fails with` "The issuer must be a signing party when an percentageAmount of tokens are redeemed"
             }
 
             // Add the redeem command, signed by the issuer but not alice.

@@ -18,8 +18,8 @@ import net.corda.core.utilities.loggerFor
  * [NonFungibleTokenContract]. It works by grouping tokens by type and then verifying each group individually. It must
  * do this because different [IssuedTokenType]s are not fungible. For example: 10 GBP issued by ALICE is not equal to 10
  * GBP issued by BOB. Likewise, 10 USD is not equal to 10 GBP. This contract doesn't need to care about the specific
- * details of tokens. It's really only concerned with ensuring that tokens are issued, moved (input amount == output
- * amount) and redeemed correctly. [FungibleTokenContract] and [NonFungibleTokenContract] specify their own
+ * details of tokens. It's really only concerned with ensuring that tokens are issued, moved (input percentageAmount == output
+ * percentageAmount) and redeemed correctly. [FungibleTokenContract] and [NonFungibleTokenContract] specify their own
  * implementations for issue, move and redeem.
  */
 abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
@@ -36,9 +36,8 @@ abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
             inputs: List<IndexedState<AT>>,
             outputs: List<IndexedState<AT>>,
             attachments: List<Attachment>,
-            burnRefs: List<TransactionState<ProofOfBurn>> = listOf(),
-            reissuanceInputs: List<TransactionState<ReissuanceToken>> = listOf(),
-            reissuanceOutputs: List<TransactionState<ReissuanceToken>> = listOf()
+            burnRefs: List<ProofOfBurn> = listOf(),
+            reissuanceInputs: List<TransactionState<ReissuanceToken>> = listOf()
     ) {
         // Get the JAR which implements the TokenType for this group.
         val jarHash: SecureHash? = verifyAllTokensUseSameTypeJar(inputs = inputs.map { it.state.data }, outputs = outputs.map { it.state.data })
@@ -53,7 +52,7 @@ abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
             // Redeems must only contain one redeem command.
             is RedeemTokenCommand -> verifyRedeem(commands.single(), inputs, outputs, attachments)
             // Reissuances must contain only one reissue command.
-            is ReissueTokenCommand -> verifyReissue(commands.single(), inputs, outputs, attachments, burnRefs, reissuanceInputs, reissuanceOutputs)
+            is ReissueTokenCommand -> verifyReissue(commands.single(), inputs, outputs, attachments, burnRefs, reissuanceInputs)
         }
     }
 
@@ -78,8 +77,8 @@ abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
     abstract fun verifyRedeem(redeemCommand: CommandWithParties<TokenCommand>, inputs: List<IndexedState<AT>>, outputs: List<IndexedState<AT>>, attachments: List<Attachment>)
 
     /**
-     * New function that allows tokens to be created without need for an equivalent amount and type of tokens
-     * to be consumed in the same transaction. We allow this by referencing the fact that the correct amount and type
+     * New function that allows tokens to be created without need for an equivalent percentageAmount and type of tokens
+     * to be consumed in the same transaction. We allow this by referencing the fact that the correct percentageAmount and type
      * of tokens have already been burnt elsewhere and the token to unclok them is now being consumed as well
      */
     abstract fun verifyReissue(
@@ -87,9 +86,8 @@ abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
             tokenInputs: List<IndexedState<AT>>,
             tokenOutputs: List<IndexedState<AT>>,
             attachments: List<Attachment>,
-            burnRefs: List<TransactionState<ProofOfBurn>>,
-            reissueInputs: List<TransactionState<ReissuanceToken>>,
-            reissueOutputs: List<TransactionState<ReissuanceToken>>
+            proofOfBurn: List<ProofOfBurn>,
+            reissuanceInputs: List<TransactionState<ReissuanceToken>>
     )
 
     final override fun verify(tx: LedgerTransaction) {
@@ -130,9 +128,8 @@ abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
                         group.inputs,
                         group.outputs,
                         tx.attachments,
-                        listOf(tx.referenceInputRefsOfType(ProofOfBurn::class.java).first().state),
-                        listOf(tx.inRefsOfType(ReissuanceToken::class.java).first().state),
-                        reissuanceOutputs = listOfNotNull(tx.outRefsOfType<ReissuanceToken>().singleOrNull()?.state)
+                        listOf(tx.referenceInputRefsOfType(ProofOfBurn::class.java).first().state.data),
+                        listOf(tx.inRefsOfType(ReissuanceToken::class.java).first().state)
                 )
             }
         }

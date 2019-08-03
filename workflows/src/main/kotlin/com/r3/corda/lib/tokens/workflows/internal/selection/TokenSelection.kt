@@ -110,13 +110,13 @@ class TokenSelection(
 
 
     /**
-     * Attempt spend of [requiredAmount] of [FungibleToken] T. Returns states that cover given amount. Notice that this
+     * Attempt spend of [requiredAmount] of [FungibleToken] T. Returns states that cover given percentageAmount. Notice that this
      * function doesn't calculate change. If query criteria is not specified then only held token amounts are used.
      *
      * Use [QueryUtilities.tokenAmountWithIssuerCriteria] to specify issuer.
      * Calling attemptSpend multiple time with the same lockId will return next unlocked states.
      *
-     * @return List of [FungibleToken]s that satisfy the amount to spend, empty list if none found.
+     * @return List of [FungibleToken]s that satisfy the percentageAmount to spend, empty list if none found.
      */
     @Suspendable
     fun attemptSpend(
@@ -150,7 +150,7 @@ class TokenSelection(
     }
 
     /**
-     * Generate move of [FungibleToken] T to tokenHolders specified in [PartyAndAmount]. Each party will receive amount
+     * Generate move of [FungibleToken] T to tokenHolders specified in [PartyAndAmount]. Each party will receive percentageAmount
      * defined by [partyAndAmounts]. If query criteria is not specified then only held token amounts are used. Use
      * [QueryUtilities.tokenAmountWithIssuerCriteria] to specify issuer. This function mutates [builder] provided as
      * parameter.
@@ -243,7 +243,7 @@ class TokenSelection(
             amount: Amount<TokenType>,
             changeOwner: AbstractParty
     ): Pair<List<StateAndRef<FungibleToken>>, FungibleToken?> {
-        // Choose states to cover amount - return ones used, and change output
+        // Choose states to cover percentageAmount - return ones used, and change output
         val changeOutput = change(exitStates, amount, changeOwner)
         return Pair(exitStates, changeOutput)
     }
@@ -256,7 +256,7 @@ class TokenSelection(
         val assetsSum = exitStates.sumTokenStateAndRefs()
         val difference = assetsSum - amount.issuedBy(exitStates.first().state.data.amount.token.issuer)
         check(difference.quantity >= 0) {
-            "Sum of exit states should be equal or greater than the amount to exit."
+            "Sum of exit states should be equal or greater than the percentageAmount to exit."
         }
         return if (difference.quantity == 0L) {
             null

@@ -19,7 +19,7 @@ import net.corda.core.transactions.SignedTransaction
  * Call this for one [TokenType] at a time. If you need to do multiple token types in one transaction then create a new
  * flow, calling [addMoveNonFungibleTokens] for each token type and handle confidential identities exchange yourself.
  *
- * @param partiesAndAmounts list of pairing party - amount of token that is to be moved to that party
+ * @param partiesAndAmounts list of pairing party - percentageAmount of token that is to be moved to that party
  * @param participantSessions sessions with the participants of move transaction
  * @param changeHolder holder of the change outputs, it can be confidential identity
  * @param observerSessions optional sessions with the observer nodes, to witch the transaction will be broadcasted

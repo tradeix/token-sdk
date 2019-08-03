@@ -15,7 +15,7 @@ import net.corda.core.transactions.SignedTransaction
  * There is no [NonFungibleToken] version of this flow, because there is no output paid.
  * Identities are synchronised during normal redeem call.
  *
- * @param amount amount of token to redeem
+ * @param amount percentageAmount of token to redeem
  * @param issuerSession session with the issuer tokens should be redeemed with
  * @param observerSessions optional sessions with the observer nodes, to witch the transaction will be broadcasted
  * @param additionalQueryCriteria additional criteria for token selection

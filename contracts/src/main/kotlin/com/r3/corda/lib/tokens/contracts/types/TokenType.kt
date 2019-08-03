@@ -17,7 +17,7 @@ import java.math.BigDecimal
  * which is used to represent the agreement between an issuer and the holder of tokens. For that we use the
  * [NonFungibleToken] state for representing the agreement between an issuer and a holder of a token which cannot be
  * split and merged, and the [FungibleToken] state for representing the agreement between an issuer and a holder of some
- * amount of a token which can be split and merged.
+ * percentageAmount of a token which can be split and merged.
  *
  * [TokenType]s can be inlined into the [NonFungibleToken] or [FungibleToken] class. Implement [TokenType] when you don't
  * expect tokens to evolve.

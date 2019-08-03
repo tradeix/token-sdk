@@ -33,12 +33,12 @@ class FungibleTokenTests : ContractTestCommon() {
             // Signed by a party other than the issuer.
             tweak {
                 command(BOB.publicKey, IssueTokenCommand(issuedToken, listOf(0)))
-                this `fails with` "The issuer must be the only signing party when an amount of tokens are issued."
+                this `fails with` "The issuer must be the only signing party when an percentageAmount of tokens are issued."
             }
             // Non issuer signature present.
             tweak {
                 command(listOf(BOB.publicKey, BOB.publicKey), IssueTokenCommand(issuedToken, listOf(0)))
-                this `fails with` "The issuer must be the only signing party when an amount of tokens are issued."
+                this `fails with` "The issuer must be the only signing party when an percentageAmount of tokens are issued."
             }
             // With an incorrect command.
             tweak {
@@ -57,13 +57,13 @@ class FungibleTokenTests : ContractTestCommon() {
                 command(ISSUER.publicKey, IssueTokenCommand(issuedToken, listOf(0)))
                 this `fails with` "There is a token group with no assigned command!"
             }
-            // With a zero amount in another group.
+            // With a zero percentageAmount in another group.
             tweak {
                 val otherToken = USD issuedBy ISSUER.party
                 output(FungibleTokenContract.contractId, 0 of otherToken heldBy ALICE.party)
                 command(ISSUER.publicKey, IssueTokenCommand(issuedToken, listOf(0)))
                 command(ISSUER.publicKey, IssueTokenCommand(otherToken, listOf(1)))
-                this `fails with` "When issuing tokens an amount > ZERO must be issued."
+                this `fails with` "When issuing tokens an percentageAmount > ZERO must be issued."
             }
             // With some input states.
             tweak {
@@ -156,7 +156,7 @@ class FungibleTokenTests : ContractTestCommon() {
                 output(FungibleTokenContract.contractId, 10.USD issuedBy BOB.party heldBy BOB.party)
                 command(ALICE.publicKey, MoveTokenCommand(USD issuedBy BOB.party, inputs = listOf(1, 2), outputs = listOf(1)))
                 // Command for the move.
-                this `fails with` "In move groups there must be an amount of input tokens > ZERO."
+                this `fails with` "In move groups there must be an percentageAmount of input tokens > ZERO."
             }
 
             // Outputs sum to zero.
@@ -166,7 +166,7 @@ class FungibleTokenTests : ContractTestCommon() {
                 output(FungibleTokenContract.contractId, 0.USD issuedBy BOB.party heldBy BOB.party)
                 command(ALICE.publicKey, MoveTokenCommand(USD issuedBy BOB.party, inputs = listOf(1), outputs = listOf(1, 2)))
                 // Command for the move.
-                this `fails with` "In move groups there must be an amount of output tokens > ZERO."
+                this `fails with` "In move groups there must be an percentageAmount of output tokens > ZERO."
             }
 
             // Unbalanced move.
@@ -175,7 +175,7 @@ class FungibleTokenTests : ContractTestCommon() {
                 output(FungibleTokenContract.contractId, 11.USD issuedBy BOB.party heldBy BOB.party)
                 command(ALICE.publicKey, MoveTokenCommand(USD issuedBy BOB.party, inputs = listOf(1), outputs = listOf(1)))
                 // Command for the move.
-                this `fails with` "In move groups the amount of input tokens MUST EQUAL the amount of output tokens. " +
+                this `fails with` "In move groups the percentageAmount of input tokens MUST EQUAL the percentageAmount of output tokens. " +
                         "In other words, you cannot create or destroy value when moving tokens."
             }
 
@@ -185,7 +185,7 @@ class FungibleTokenTests : ContractTestCommon() {
                 output(FungibleTokenContract.contractId, 0.USD issuedBy BOB.party heldBy BOB.party)
                 command(ALICE.publicKey, MoveTokenCommand(USD issuedBy BOB.party, inputs = listOf(1), outputs = listOf(1, 2)))
                 // Command for the move.
-                this `fails with` "You cannot create output token amounts with a ZERO amount."
+                this `fails with` "You cannot create output token amounts with a ZERO percentageAmount."
             }
 
             // Two moves (two different groups).
@@ -313,7 +313,7 @@ class FungibleTokenTests : ContractTestCommon() {
             // Start with a basic redeem which redeems 10 tokens in entirety from ALICE .
             input(FungibleTokenContract.contractId, 10 of issuedToken heldBy ALICE.party)
             command(listOf(ALICE.publicKey), RedeemTokenCommand(issuedToken, inputs = listOf(0)))
-            this `fails with` "The issuer must be the signing party when an amount of tokens are redeemed."
+            this `fails with` "The issuer must be the signing party when an percentageAmount of tokens are redeemed."
         }
     }
 
@@ -326,7 +326,7 @@ class FungibleTokenTests : ContractTestCommon() {
             input(FungibleTokenContract.contractId, 10 of GBP issuedBy BOB.party heldBy ALICE.party)
             command(listOf(ALICE.publicKey, ISSUER.publicKey), RedeemTokenCommand(issuedToken, inputs = listOf(0)))
             command(listOf(ALICE.publicKey, ISSUER.publicKey), RedeemTokenCommand(GBP issuedBy BOB.party, inputs = listOf(1)))
-            this `fails with` "The issuer must be the signing party when an amount of tokens are redeemed."
+            this `fails with` "The issuer must be the signing party when an percentageAmount of tokens are redeemed."
         }
     }
 
@@ -376,7 +376,7 @@ class FungibleTokenTests : ContractTestCommon() {
             input(FungibleTokenContract.contractId, 10 of issuedToken heldBy ALICE.party)
             output(FungibleTokenContract.contractId, 10 of issuedToken heldBy BOB.party)
             command(listOf(ISSUER.publicKey, ALICE.publicKey), RedeemTokenCommand(issuedToken, inputs = listOf(0), outputs = listOf(0)))
-            this `fails with` "Change shouldn't exceed amount redeemed"
+            this `fails with` "Change shouldn't exceed percentageAmount redeemed"
         }
     }
 
@@ -388,7 +388,7 @@ class FungibleTokenTests : ContractTestCommon() {
             input(FungibleTokenContract.contractId, 10 of issuedToken heldBy ALICE.party)
             output(FungibleTokenContract.contractId, 11 of issuedToken heldBy BOB.party)
             command(listOf(ISSUER.publicKey, ALICE.publicKey), RedeemTokenCommand(issuedToken, inputs = listOf(0), outputs = listOf(0)))
-            this `fails with` "Change shouldn't exceed amount redeemed"
+            this `fails with` "Change shouldn't exceed percentageAmount redeemed"
         }
     }
 
@@ -435,7 +435,7 @@ class FungibleTokenTests : ContractTestCommon() {
             // Start with a basic redeem which redeems 10 tokens in entirety from ALICE .
             input(FungibleTokenContract.contractId, 0 of issuedToken heldBy ALICE.party)
             command(listOf(ISSUER.publicKey, ALICE.publicKey), RedeemTokenCommand(issuedToken, inputs = listOf(0)))
-            this `fails with` " When redeeming tokens an amount > ZERO must be redeemed"
+            this `fails with` " When redeeming tokens an percentageAmount > ZERO must be redeemed"
         }
     }
 

@@ -9,10 +9,10 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.transactions.TransactionBuilder
 
 /**
- * Inlined flow used to redeem amount of [FungibleToken]s issued by the particular issuer with possible change output
+ * Inlined flow used to redeem percentageAmount of [FungibleToken]s issued by the particular issuer with possible change output
  * paid to the [changeOwner].
  *
- * @param amount amount of token to redeem
+ * @param amount percentageAmount of token to redeem
  * @param changeOwner owner of possible change output, which defaults to the node identity of the calling node
  * @param issuerSession session with the issuer tokens should be redeemed with
  * @param observerSessions optional sessions with the observer nodes, to witch the transaction will be broadcasted

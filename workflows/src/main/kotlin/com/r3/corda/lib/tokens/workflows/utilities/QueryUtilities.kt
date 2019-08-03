@@ -57,7 +57,7 @@ fun heldTokenAmountCriteria(token: TokenType, holder: AbstractParty): QueryCrite
 
 // Returns all held token amounts of a specified token.
 // We need to discriminate on the token type as well as the symbol as different tokens might use the same symbols.
-// TODO should be called token amount criteria (there is no owner selection)
+// TODO should be called token percentageAmount criteria (there is no owner selection)
 @Suspendable
 fun tokenAmountCriteria(token: TokenType): QueryCriteria {
     val tokenClass = builder {

@@ -1,6 +1,7 @@
 package com.r3.corda.lib.tokens.contracts
 
 import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
+import com.r3.corda.lib.tokens.contracts.states.ReissuableState
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 
@@ -30,7 +31,7 @@ class ProofOfBurnContract : Contract {
         // i.e. we should group them by their stated purpose (burnPurpose: StateRef)
         val proofOfBurnOutputRef = tx.outRefsOfType<ProofOfBurn>().single()
 
-        require(tx.outRef<ContractState>(proofOfBurnOutputRef.state.data.burnedStateIndex).state.encumbrance
+        require(tx.outRef<ReissuableState>(proofOfBurnOutputRef.state.data.burnedState.second).state.encumbrance
                 == proofOfBurnOutputRef.ref.index) { "The output ProofOfBurn claims was burned is encumbered by ProofOfBurn" }
     }
 }

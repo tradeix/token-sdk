@@ -39,7 +39,7 @@ class DvPFlow(val house: House, val newOwner: Party) : FlowLogic<SignedTransacti
         val txBuilder = TransactionBuilder(notary = getPreferredNotary(serviceHub))
         addMoveNonFungibleTokens(txBuilder, serviceHub, house.toPointer<House>(), newOwner)
         val session = initiateFlow(newOwner)
-        // Ask for input stateAndRefs - send notification with the amount to exchange.
+        // Ask for input stateAndRefs - send notification with the percentageAmount to exchange.
         session.send(DvPNotification(house.valuation))
         // TODO add some checks for inputs and outputs
         val inputs = subFlow(ReceiveStateAndRefFlow<FungibleToken>(session))

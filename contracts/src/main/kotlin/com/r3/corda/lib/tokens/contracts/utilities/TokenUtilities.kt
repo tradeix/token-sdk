@@ -24,7 +24,7 @@ class TokenUtilities {
 // ------------------------------------------------------
 
 /**
- * Creates a [FungibleToken] from an an amount of [IssuedTokenType].
+ * Creates a [FungibleToken] from an an percentageAmount of [IssuedTokenType].
  * E.g. Amount<IssuedTokenType<TokenType>> -> FungibleToken<TokenType>.
  */
 infix fun Amount<IssuedTokenType>.heldBy(owner: AbstractParty): FungibleToken = _heldBy(owner)

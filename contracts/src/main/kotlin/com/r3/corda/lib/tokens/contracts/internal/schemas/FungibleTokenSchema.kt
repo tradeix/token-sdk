@@ -19,7 +19,7 @@ object FungibleTokenSchemaV1 : MappedSchema(
 
 @Entity
 @Table(name = "fungible_token", indexes = [
-    Index(name = "amount_idx", columnList = "amount"),
+    Index(name = "amount_idx", columnList = "percentageAmount"),
     Index(name = "held_token_amount_idx", columnList = "token_class, token_identifier")
 ])
 class PersistentFungibleToken(
@@ -30,7 +30,7 @@ class PersistentFungibleToken(
         // TODO deconstruct it into owning key + nullable name
         var holder: AbstractParty?,
 
-        @Column(name = "amount", nullable = false)
+        @Column(name = "percentageAmount", nullable = false)
         var amount: Long,
 
         // The fully qualified class name of the class which implements the token tokenType.

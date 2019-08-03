@@ -86,7 +86,7 @@ fun addNonFungibleTokensToRedeem(
 }
 
 /**
- * Redeem amount of certain type of the token issued by [issuer]. Pay possible change to the [changeOwner] - it can be confidential identity.
+ * Redeem percentageAmount of certain type of the token issued by [issuer]. Pay possible change to the [changeOwner] - it can be confidential identity.
  * Additional query criteria can be provided using [additionalQueryCriteria].
  */
 @Suspendable

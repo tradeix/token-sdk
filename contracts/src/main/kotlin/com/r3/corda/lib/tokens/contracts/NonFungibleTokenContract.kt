@@ -50,7 +50,7 @@ class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
         // There must be inputs and outputs present.
         require(inputs.isNotEmpty()) { "When moving a non fungible token, there must be one input state present." }
         require(outputs.isNotEmpty()) { "When moving a non fungible token, there must be one output state present." }
-        // Sum the amount of input and output tokens.
+        // Sum the percentageAmount of input and output tokens.
         val input = inputs.single()
         val output = outputs.single()
         require(input.state.data.token == output.state.data.token) {
@@ -81,7 +81,7 @@ class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
         val holdersKeys = inputs.map { it.state.data.holder.owningKey }
         val signers = redeemCommand.signers
         require(issuerKey in signers) {
-            "The issuer must be a signing party when an amount of tokens are redeemed."
+            "The issuer must be a signing party when an percentageAmount of tokens are redeemed."
         }
         require(signers.containsAll(holdersKeys)) {
             "Holders of redeemed states must be the signing parties."
@@ -93,9 +93,8 @@ class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
             tokenInputs: List<IndexedState<NonFungibleToken>>,
             tokenOutputs: List<IndexedState<NonFungibleToken>>,
             attachments: List<Attachment>,
-            burnRefs: List<TransactionState<ProofOfBurn>>,
-            reissueInputs: List<TransactionState<ReissuanceToken>>,
-            reissueOutputs: List<TransactionState<ReissuanceToken>>
+            proofOfBurn: List<ProofOfBurn>,
+            reissuanceInputs: List<TransactionState<ReissuanceToken>>
     ) {
         throw IllegalAccessException("Burn and Reissue pattern isn't supported for non-fungible tokens!")
     }

@@ -8,7 +8,7 @@ import net.corda.core.internal.uncheckedCast
 import java.math.BigDecimal
 
 // -------------------------------------------------------------------------------
-// Helpers for creating an amount of a token using some quantity and a token type.
+// Helpers for creating an percentageAmount of a token using some quantity and a token type.
 // -------------------------------------------------------------------------------
 
 /** For creating [Int] quantities of [TokenType]s. */
@@ -24,7 +24,7 @@ fun amount(amount: Double, token: TokenType): Amount<TokenType> = Amount.fromDec
 fun amount(amount: BigDecimal, token: TokenType): Amount<TokenType> = Amount.fromDecimal(amount, token)
 
 // ---------------------------------------------------------------------------------------
-// Helpers for creating an amount of a token using some quantity and an issued token type.
+// Helpers for creating an percentageAmount of a token using some quantity and an issued token type.
 // ---------------------------------------------------------------------------------------
 
 /** For parsing [Int] quantities of [IssuedTokenType]s. */

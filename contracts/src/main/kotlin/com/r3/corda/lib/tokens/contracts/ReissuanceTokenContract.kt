@@ -52,7 +52,7 @@ class ReissuanceTokenContract : Contract {
     }
 
     /**
-     * For now, only one ReissuanceToken can move at a time and the entire amount must be transferred
+     * For now, only one ReissuanceToken can move at a time and the entire percentageAmount must be transferred
      * However, the outputs can be split to better prove out the overall concept
      * */
     private fun verifyMove(tx: LedgerTransaction, signers: Set<PublicKey>) = requireThat {
@@ -64,8 +64,8 @@ class ReissuanceTokenContract : Contract {
 
         val reissuanceOutputs = tx.outputsOfType<ReissuanceToken>()
 
-        "Combined amount on ReissuanceToken outputs is less than or equal to the ReissuanceToken input" using
-                (reissuanceOutputs.map { it.amount }.sum() <= reissuanceInput.amount)
+        "Combined percentageAmount on ReissuanceToken outputs is less than or equal to the ReissuanceToken input" using
+                (reissuanceOutputs.map { it.percentageAmount }.sum() <= reissuanceInput.percentageAmount)
     }
 
     /**
@@ -75,7 +75,7 @@ class ReissuanceTokenContract : Contract {
      * in the contract of the relevant burned state (normally a token state)
      *
      * Again, only for purposes of example, we assume for now that only one reissuance is used at once. However, there
-     * can be change returned if the amount burned is less than the amount on the ReissuanceToken
+     * can be change returned if the percentageAmount burned is less than the percentageAmount on the ReissuanceToken
      */
     private fun verifyUse(tx: LedgerTransaction, signers: Set<PublicKey>) = requireThat {
         val reissuanceInput = tx.inputsOfType<ReissuanceToken>().single()

@@ -8,10 +8,7 @@ import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
 import com.r3.corda.lib.tokens.contracts.states.ReissuanceToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.utilities.sumTokenStatesOrZero
-import net.corda.core.contracts.Amount
-import net.corda.core.contracts.Attachment
-import net.corda.core.contracts.CommandWithParties
-import net.corda.core.contracts.TransactionState
+import net.corda.core.contracts.*
 import net.corda.core.identity.Party
 import net.corda.core.internal.uncheckedCast
 import java.security.PublicKey
@@ -55,17 +52,17 @@ open class FungibleTokenContract : AbstractTokenContract<FungibleToken>() {
             // We don't care about the token as the grouping function ensures that all the outputs are of the same
             // token.
             require(this.map { it.state.data }.sumTokenStatesOrZero(issuedToken) > Amount.zero(issuedToken)) {
-                "When issuing tokens an amount > ZERO must be issued."
+                "When issuing tokens an percentageAmount > ZERO must be issued."
             }
             val hasZeroAmounts = any { it.state.data.amount == Amount.zero(issuedToken) }
-            require(hasZeroAmounts.not()) { "You cannot issue tokens with a zero amount." }
+            require(hasZeroAmounts.not()) { "You cannot issue tokens with a zero percentageAmount." }
             // There can only be one issuer per group as the issuer is part of the token which is used to group states.
             // If there are multiple issuers for the same tokens then there will be a group for each issued token. So,
             // the line below should never fail on single().
             val issuer: Party = this.map { it.state.data }.map(AbstractToken::issuer).toSet().single()
             // Only the issuer should be signing the issuer command.
             require(issueCommand.signers.singleOrNull { it == issuer.owningKey } != null) {
-                "The issuer must be the only signing party when an amount of tokens are issued."
+                "The issuer must be the only signing party when an percentageAmount of tokens are issued."
             }
         }
 
@@ -82,18 +79,18 @@ open class FungibleTokenContract : AbstractTokenContract<FungibleToken>() {
         // There must be inputs and outputs present.
         require(inputs.isNotEmpty()) { "When moving tokens, there must be input states present." }
         require(outputs.isNotEmpty()) { "When moving tokens, there must be output states present." }
-        // Sum the amount of input and output tokens.
+        // Sum the percentageAmount of input and output tokens.
         val inputAmount: Amount<IssuedTokenType> = inputs.map { it.state.data }.sumTokenStatesOrZero(issuedToken)
-        require(inputAmount > Amount.zero(issuedToken)) { "In move groups there must be an amount of input tokens > ZERO." }
+        require(inputAmount > Amount.zero(issuedToken)) { "In move groups there must be an percentageAmount of input tokens > ZERO." }
         val outputAmount: Amount<IssuedTokenType> = outputs.map { it.state.data }.sumTokenStatesOrZero(issuedToken)
-        require(outputAmount > Amount.zero(issuedToken)) { "In move groups there must be an amount of output tokens > ZERO." }
+        require(outputAmount > Amount.zero(issuedToken)) { "In move groups there must be an percentageAmount of output tokens > ZERO." }
         // Input and output amounts must be equal.
         require(inputAmount == outputAmount) {
-            "In move groups the amount of input tokens MUST EQUAL the amount of output tokens. In other words, you " +
+            "In move groups the percentageAmount of input tokens MUST EQUAL the percentageAmount of output tokens. In other words, you " +
                     "cannot create or destroy value when moving tokens."
         }
         val hasZeroAmounts = outputs.any { it.state.data.amount == Amount.zero(issuedToken) }
-        require(hasZeroAmounts.not()) { "You cannot create output token amounts with a ZERO amount." }
+        require(hasZeroAmounts.not()) { "You cannot create output token amounts with a ZERO percentageAmount." }
         // There can be different owners in each move group. There may be one command for each of the signers publickey
         // or all the public keys might be listed within one command.
         val inputOwningKeys: Set<PublicKey> = inputs.map { it.state.data.holder.owningKey }.toSet()
@@ -128,13 +125,13 @@ open class FungibleTokenContract : AbstractTokenContract<FungibleToken>() {
             // We don't care about the token as the grouping function ensures all the inputs are of the same token.
             val inputSum: Amount<IssuedTokenType> = this.map { it.state.data }.sumTokenStatesOrZero(issuedToken)
             require(inputSum > Amount.zero(issuedToken)) {
-                "When redeeming tokens an amount > ZERO must be redeemed."
+                "When redeeming tokens an percentageAmount > ZERO must be redeemed."
             }
             val outSum: Amount<IssuedTokenType> = outputs.firstOrNull()?.state?.data?.amount
                     ?: Amount.zero(issuedToken)
             // We can't pay back more than redeeming.
             // Additionally, it doesn't make sense to run redeem and pay exact change.
-            require(inputSum > outSum) { "Change shouldn't exceed amount redeemed." }
+            require(inputSum > outSum) { "Change shouldn't exceed percentageAmount redeemed." }
             // There can only be one issuer per group as the issuer is part of the token which is used to group states.
             // If there are multiple issuers for the same tokens then there will be a group for each issued token. So,
             // the line below should never fail on single().
@@ -142,7 +139,7 @@ open class FungibleTokenContract : AbstractTokenContract<FungibleToken>() {
             val ownersKeys: List<PublicKey> = inputs.map { it.state.data.holder.owningKey }
             val signers = redeemCommand.signers
             require(issuerKey in signers) {
-                "The issuer must be the signing party when an amount of tokens are redeemed."
+                "The issuer must be the signing party when an percentageAmount of tokens are redeemed."
             }
             require(signers.containsAll(ownersKeys)) {
                 "Owners of redeemed states must be the signing parties."
@@ -154,22 +151,36 @@ open class FungibleTokenContract : AbstractTokenContract<FungibleToken>() {
                                tokenInputs: List<AbstractTokenContract.IndexedState<FungibleToken>>,
                                tokenOutputs: List<AbstractTokenContract.IndexedState<FungibleToken>>,
                                attachments: List<Attachment>,
-                               burnRefs: List<TransactionState<ProofOfBurn>>,
-                               reissueInputs: List<TransactionState<ReissuanceToken>>,
-                               reissueOutputs: List<TransactionState<ReissuanceToken>>
+                               proofOfBurn: List<ProofOfBurn>,
+                               reissuanceInputs: List<TransactionState<ReissuanceToken>>
     ) {
         require(tokenInputs.isEmpty()) { "When reissuing tokens, there cannot be any token input states." }
 
-        require(tokenOutputs.size == 1) { "When reissuing tokens, there must be one token output present" }
-        // require(tokenOutputs.single().state.data.amount.quantity <= burnRefs.first().data.amount) {
-        // "Reissued amount must be less than or equal to the burned amount as reflected on the TokenBurn"
-        // }
-        // require(tokenOutputs.single().state.constraint == burnRefs.first().data.burnedState.constraint) {
-        // "Reissued contract constraint must be the same as when the token was burn as reflected on the TokenBurn"
-        // }
+        // NOTE > For now we are considering single output token and single burn reference
+        require(tokenOutputs.size == 1) { "When reissuing tokens, there must be only one token output present." }
 
-        val reissueTokenOwnerKey = reissueInputs.first().data.owner.owningKey
+        require(proofOfBurn.size == 1) { "When reissuing tokens, there must be only one burning state present." }
+
+        require(proofOfBurn.single().burnedState.first.data is FungibleToken) {
+            "The token that was burned must be a FungibleToken."
+        }
+
+        val burnedFungibleToken = proofOfBurn.single().burnedState.first as TransactionState<FungibleToken>
+
+        require(tokenOutputs.single().state.data.amount.quantity == reissuanceInputs.single().data.percentageAmount * burnedFungibleToken.data.amount.quantity / 100) {
+            "Reissued fungible token amount must be equal to the reissuance token percentage of the burned state amount."
+        }
+
+        require(tokenOutputs.single().state.constraint == burnedFungibleToken.constraint) {
+            "Reissued contract constraint must be the same as when the token was burn as reflected on the TokenBurn."
+        }
+
+        val reissueTokenOwnerKey = reissuanceInputs.first().data.owner.owningKey
         val signers = reissueCommand.signers
-        require(reissueTokenOwnerKey in signers) { "Owner of reissuance token must sign to use the token" }
+        require(reissueTokenOwnerKey in signers) { "Owner of reissuance token must sign to use the token." }
+
+        require(reissuanceInputs.single().data.reissueKey == proofOfBurn.single().purposeOfBurn) {
+            "Reissued input token key must match the purposeOfBurn."
+        }
     }
 }

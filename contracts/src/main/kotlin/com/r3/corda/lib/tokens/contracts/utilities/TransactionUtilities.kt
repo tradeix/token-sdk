@@ -48,7 +48,7 @@ fun Iterable<StateAndRef<FungibleToken>>.sumTokenStateAndRefs(): Amount<IssuedTo
     return map { it.state.data.amount }.sumTokensOrThrow()
 }
 
-/** Sums the held token amount state and refs in the list, returning null if there are none. */
+/** Sums the held token percentageAmount state and refs in the list, returning null if there are none. */
 fun Iterable<StateAndRef<FungibleToken>>.sumTokenStateAndRefsOrNull(): Amount<IssuedTokenType>? {
     return map { it.state.data.amount }.sumIssuedTokensOrNull()
 }

@@ -96,7 +96,7 @@ open class FungibleToken(
                         ),
                         FungibleToken(
                                 // TODO : Straight up doesn't work!
-                                amount = amount.copy(quantity = (singleReissuanceInput.amount.toLong() * amount.quantity) / 100),
+                                amount = amount.copy(quantity = (singleReissuanceInput.percentageAmount.toLong() * amount.quantity) / 100),
                                 holder = newOwner
                         )
                 )

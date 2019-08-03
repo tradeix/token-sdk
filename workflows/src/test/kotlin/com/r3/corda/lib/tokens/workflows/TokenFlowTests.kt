@@ -90,7 +90,7 @@ class TokenFlowTests : MockNetworkTest(numberOfNodes = 4) {
         val house = House("24 Leinster Gardens, Bayswater, London", 1_000_000.GBP, listOf(I.legalIdentity()), linearId = UniqueIdentifier())
         val createTokenTx = I.createEvolvableToken(house, NOTARY.legalIdentity()).getOrThrow()
         val token = createTokenTx.singleOutput<House>()
-        // Issue amount of the token.
+        // Issue percentageAmount of the token.
         val housePointer: TokenPointer<House> = house.toPointer()
         I.issueFungibleTokens(A, 100 of housePointer).getOrThrow()
         network.waitQuiescent()
@@ -107,7 +107,7 @@ class TokenFlowTests : MockNetworkTest(numberOfNodes = 4) {
         val house = House("24 Leinster Gardens, Bayswater, London", 1_000_000.GBP, listOf(I.legalIdentity()), linearId = UniqueIdentifier())
         val createTokenTx = I.createEvolvableToken(house, NOTARY.legalIdentity()).getOrThrow()
         val houseToken: StateAndRef<House> = createTokenTx.singleOutput()
-        // Issue amount of the token.
+        // Issue percentageAmount of the token.
         val housePointer: TokenPointer<House> = house.toPointer()
         I.issueFungibleTokens(A, 100 of housePointer).getOrThrow()
         network.waitQuiescent()
@@ -121,7 +121,7 @@ class TokenFlowTests : MockNetworkTest(numberOfNodes = 4) {
         val house = House("24 Leinster Gardens, Bayswater, London", 1_000_000.GBP, listOf(I.legalIdentity()), linearId = UniqueIdentifier())
         val createTokenTx = I.createEvolvableToken(house, NOTARY.legalIdentity()).getOrThrow()
         val token = createTokenTx.singleOutput<House>()
-        // Issue amount of the token.
+        // Issue percentageAmount of the token.
         val housePointer: TokenPointer<House> = house.toPointer()
         I.issueFungibleTokens(A, 100 of housePointer).getOrThrow()
         network.waitQuiescent()
@@ -138,7 +138,7 @@ class TokenFlowTests : MockNetworkTest(numberOfNodes = 4) {
         // Create new token.
         val house = House("24 Leinster Gardens, Bayswater, London", 1_000_000.GBP, listOf(I.legalIdentity()), linearId = UniqueIdentifier())
         I.createEvolvableToken(house, NOTARY.legalIdentity()).getOrThrow()
-        // Issue amount of the token.
+        // Issue percentageAmount of the token.
         val housePointer: TokenPointer<House> = house.toPointer()
         I.issueFungibleTokens(A, 100 of housePointer).getOrThrow()
         network.waitQuiescent()

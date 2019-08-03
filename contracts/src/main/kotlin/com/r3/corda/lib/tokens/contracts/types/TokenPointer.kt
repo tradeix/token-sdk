@@ -9,7 +9,7 @@ import net.corda.core.contracts.LinearPointer
  * To harness the power of [EvolvableTokenType]s, they cannot be directly embedded in [NonFungibleToken]s or
  * [FungibleToken]s. Instead, a [TokenPointer] is embedded. The pointer can be resolved inside the verify function to
  * obtain the data within the [EvolvableTokenType]. This way, the token token type can evolve independently from the
- * question of which [Party] owns some issued amount of it, as the data is held in a separate state object.
+ * question of which [Party] owns some issued percentageAmount of it, as the data is held in a separate state object.
  *
  * @property pointer a [LinearPointer] which points to an [EvolvableTokenType].
  * @property displayTokenSize required for adding or subtracting [Amount]s of [TokenPointer] (which are acting as a

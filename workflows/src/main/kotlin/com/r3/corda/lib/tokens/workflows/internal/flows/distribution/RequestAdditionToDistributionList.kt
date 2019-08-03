@@ -18,7 +18,7 @@ import net.corda.core.utilities.unwrap
  * least_ one version of the evolvable token. This is probably acceptable as when the issuer issues some of the token
  * for the first time to a party, then they will also send along the most current version of the evolvable token as
  * well. This also simplifies the workflow a bit; when tokensToIssue are issued, it is expected that the issuer sends along the
- * evolvable token as well and likewise when some amount of token is transferred from one party to another. Once a party
+ * evolvable token as well and likewise when some percentageAmount of token is transferred from one party to another. Once a party
  * has at least one version of the evolvable token, they can request to be automatically updated using this flow going
  * forward.
  *
