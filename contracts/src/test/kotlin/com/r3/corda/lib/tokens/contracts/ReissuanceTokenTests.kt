@@ -3,6 +3,10 @@ package com.r3.corda.lib.tokens.contracts
 import com.r3.corda.lib.tokens.contracts.states.NonceState
 import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
 import com.r3.corda.lib.tokens.contracts.states.ReissuanceToken
+import com.r3.corda.lib.tokens.contracts.utilities.heldBy
+import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
+import com.r3.corda.lib.tokens.contracts.utilities.of
+import com.r3.corda.lib.tokens.money.USD
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.TransactionState
 import net.corda.core.crypto.SecureHash
@@ -10,20 +14,28 @@ import org.junit.Test
 
 class ReissuanceTokenTests : ContractTestCommon() {
 
+    val burnedToken = USD issuedBy ISSUER.party
+
     val ref = StateRef(SecureHash.randomSHA256(), 0)
 
-    val pob = ProofOfBurn(0, ref)
+    val pob = ProofOfBurn(Pair(
+            TransactionState(
+                    800 of burnedToken heldBy ALICE.party,
+                    FungibleTokenContract.contractId,
+                    NOTARY.party
+            ), 0
+    ), ref)
 
     val pobTx = TransactionState(pob, ProofOfBurnContract.ID, NOTARY.party)
 
     val token = ReissuanceToken(
             owner = ALICE.party,
             reissueKey = ref,
-            amount = 100.0,
+            percentageAmount = 100,
             usedProofs = listOf(pobTx)
     )
 
-    val splitTokens = token.spend(mapOf(ALICE.party to 50.0))
+    val splitTokens = token.spend(mapOf(ALICE.party to 50L))
 
     val nonce = NonceState()
 

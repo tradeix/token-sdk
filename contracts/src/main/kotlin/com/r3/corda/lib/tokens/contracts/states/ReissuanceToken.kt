@@ -42,13 +42,13 @@ data class ReissuanceToken(
 
 
     fun spend(
-            newOwners: Map<AbstractParty, Double>,
+            newOwners: Map<AbstractParty, Long>,
             additionalParticipants: List<AbstractParty> = emptyList()
     ): List<ReissuanceToken> {
         val newOwnersTotal = newOwners.values.sum()
 
-        check(newOwnersTotal <= amount) {
-            "Cannot reissue more than the initial amount: $amount"
+        check(newOwnersTotal <= percentageAmount) {
+            "Cannot reissue more than the initial amount: $percentageAmount"
         }
 
         val resultTokens = newOwners.map {
