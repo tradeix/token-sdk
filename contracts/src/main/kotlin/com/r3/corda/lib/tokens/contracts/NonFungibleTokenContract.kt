@@ -2,25 +2,29 @@ package com.r3.corda.lib.tokens.contracts
 
 import com.r3.corda.lib.tokens.contracts.commands.TokenCommand
 import com.r3.corda.lib.tokens.contracts.states.NonFungibleToken
+import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
+import com.r3.corda.lib.tokens.contracts.states.ReissuanceToken
+import com.r3.corda.lib.tokens.contracts.types.TokenType
 import net.corda.core.contracts.Attachment
 import net.corda.core.contracts.CommandWithParties
+import net.corda.core.contracts.TransactionState
 import net.corda.core.internal.uncheckedCast
 
 /**
  * See kdoc for [FungibleTokenContract].
  */
-class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
+class NonFungibleTokenContract<T : TokenType> : AbstractTokenContract<T, NonFungibleToken<T>>() {
 
-    override val accepts: Class<NonFungibleToken> get() = uncheckedCast(NonFungibleToken::class.java)
+    override val accepts: Class<NonFungibleToken<T>> get() = uncheckedCast(NonFungibleToken::class.java)
 
     companion object {
         val contractId = this::class.java.enclosingClass.canonicalName
     }
 
     override fun verifyIssue(
-            issueCommand: CommandWithParties<TokenCommand>,
-            inputs: List<IndexedState<NonFungibleToken>>,
-            outputs: List<IndexedState<NonFungibleToken>>,
+            issueCommand: CommandWithParties<TokenCommand<T>>,
+            inputs: List<IndexedState<NonFungibleToken<T>>>,
+            outputs: List<IndexedState<NonFungibleToken<T>>>,
             attachments: List<Attachment>
     ) {
         require(inputs.isEmpty()) { "When issuing non fungible tokens, there cannot be any input states." }
@@ -39,9 +43,9 @@ class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
     // Even if we have two tokens containing the same info, they will have different linear IDs so end up in different
     // groups.
     override fun verifyMove(
-            moveCommands: List<CommandWithParties<TokenCommand>>,
-            inputs: List<IndexedState<NonFungibleToken>>,
-            outputs: List<IndexedState<NonFungibleToken>>,
+            moveCommands: List<CommandWithParties<TokenCommand<T>>>,
+            inputs: List<IndexedState<NonFungibleToken<T>>>,
+            outputs: List<IndexedState<NonFungibleToken<T>>>,
             attachments: List<Attachment>
     ) {
         // There must be inputs and outputs present.
@@ -56,25 +60,25 @@ class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
         // There should only be one move command with one signature.
         require(moveCommands.size == 1) { "There should be only one move command per group when moving non fungible tokens." }
         require(input.state.data.linearId == output.state.data.linearId) { "The linear ID must not change." }
-        val moveCommand: CommandWithParties<TokenCommand> = moveCommands.single()
+        val moveCommand: CommandWithParties<TokenCommand<T>> = moveCommands.single()
         require(moveCommand.signers.toSet() == setOf(input.state.data.holder.owningKey)) {
             "The current holder must be the only signing party when a non-fungible (discrete) token is moved."
         }
     }
 
     override fun verifyRedeem(
-            redeemCommand: CommandWithParties<TokenCommand>,
-            inputs: List<IndexedState<NonFungibleToken>>,
-            outputs: List<IndexedState<NonFungibleToken>>,
+            redeemCommand: CommandWithParties<TokenCommand<T>>,
+            inputs: List<IndexedState<NonFungibleToken<T>>>,
+            outputs: List<IndexedState<NonFungibleToken<T>>>,
             attachments: List<Attachment>
     ) {
         // There must be inputs and outputs present.
-        require(outputs.isEmpty()) { "When redeeming a held token, there must be no output." }
-        require(inputs.size == 1) { "When redeeming a held token, there must be only one input." }
-        val heldToken = inputs.single()
+        require(outputs.isEmpty()) { "When redeeming an owned token, there must be no output." }
+        require(inputs.size == 1) { "When redeeming an owned token, there must be only one input." }
+        val ownedToken = inputs.single()
         // Only the issuer and holders should be signing the redeem command.
         // There will only ever be one issuer as the issuer forms part of the grouping key.
-        val issuerKey = heldToken.state.data.token.issuer.owningKey
+        val issuerKey = ownedToken.state.data.token.issuer.owningKey
         val holdersKeys = inputs.map { it.state.data.holder.owningKey }
         val signers = redeemCommand.signers
         require(issuerKey in signers) {
@@ -83,5 +87,9 @@ class NonFungibleTokenContract : AbstractTokenContract<NonFungibleToken>() {
         require(signers.containsAll(holdersKeys)) {
             "Holders of redeemed states must be the signing parties."
         }
+    }
+
+    override fun verifyReissue(reissueCommand: CommandWithParties<TokenCommand<T>>, tokenInputs: List<IndexedState<NonFungibleToken<T>>>, tokenOutputs: List<IndexedState<NonFungibleToken<T>>>, attachments: List<Attachment>, burnRefs: List<TransactionState<ProofOfBurn>>, reissueInputs: List<TransactionState<ReissuanceToken>>, reissueOutputs: List<TransactionState<ReissuanceToken>>) {
+        throw IllegalAccessException("Burn and Reissue pattern isn't supported for nonfungible tokens!")
     }
 }
