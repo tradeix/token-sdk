@@ -17,7 +17,6 @@ import java.util.*
  * StateRef when it is used in a subsequent transaction
  */
 @BelongsToContract(NonceStateContract::class)
-data class NonceState(
-        val nonce: UUID = UUID.randomUUID(),
-        override val participants: List<AbstractParty> = listOf()
-): ContractState
+data class NonceState(val nonce: UUID = UUID.randomUUID()) : ContractState {
+    override val participants: List<AbstractParty> get() = emptyList()
+}

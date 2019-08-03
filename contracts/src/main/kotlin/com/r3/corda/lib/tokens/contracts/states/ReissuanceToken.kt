@@ -1,7 +1,10 @@
 package com.r3.corda.lib.tokens.contracts.states
 
 import com.r3.corda.lib.tokens.contracts.ReissuanceTokenContract
-import net.corda.core.contracts.*
+import net.corda.core.contracts.BelongsToContract
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateRef
+import net.corda.core.contracts.TransactionState
 import net.corda.core.identity.AbstractParty
 
 /**
@@ -31,27 +34,32 @@ import net.corda.core.identity.AbstractParty
  * @property amount the percentage of incoming funds this party has the right to collect
  * @property usedProofs the list of [ProofOfBurn] states that have already be used and, therefore, can't be used again
  */
-
 @BelongsToContract(ReissuanceTokenContract::class)
 data class ReissuanceToken(
         val owner: AbstractParty,
         val reissueKey: StateRef,
-        // Until split, the owner will have the right to reissue 100% of funds burned with the correct burn purpose
-        val amount: Long = 100,
-        // No burns have been used when the state is first issued
-        val usedProofs: List<TransactionState<ProofOfBurn>> = listOf(),
-
-        /** Although normally only the owner, a reissuance token can have an arbitrary set of participants to allow,
-         * as an example, for the case where the party burning tokens needs to know who has the right to reissue them */
-        override val participants: List<AbstractParty> = listOf()
+        val amount: Double,
+        val usedProofs: List<TransactionState<ProofOfBurn>> = emptyList(),
+        override val participants: List<AbstractParty> = listOf(owner)
 ) : ContractState {
 
-    fun withNewOwner(newOwner: AbstractParty, amount: Long, additionalParticipants: List<AbstractParty> = listOf()): ReissuanceToken {
-        return ReissuanceToken(
-                newOwner,
-                reissueKey,
-                amount = amount,
-                usedProofs = usedProofs,
-                participants = additionalParticipants + newOwner)
+
+    fun spend(
+            newOwners: Map<AbstractParty, Double>,
+            additionalParticipants: List<AbstractParty>
+    ): List<ReissuanceToken> {
+        val newOwnersTotal = newOwners.values.sum()
+
+        check(newOwnersTotal > amount) {
+            "Cannot reissue more than the initial amount: $amount"
+        }
+
+        val resultTokens = newOwners.map {
+            ReissuanceToken(it.key, reissueKey, it.value, usedProofs, additionalParticipants + it.key)
+        }
+
+        return if (newOwnersTotal < amount) {
+            resultTokens + ReissuanceToken(owner, reissueKey, amount - newOwnersTotal, usedProofs)
+        } else resultTokens
     }
 }

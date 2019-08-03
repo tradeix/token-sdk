@@ -4,15 +4,15 @@ import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
 
-interface Reissuable: ContractState {
+interface ReissuableState: ContractState {
 
     /**
      * For determining what the owner of the ReissuanceToken to be consumed is allowed to reissue
      * A flow creating a reissuance transaction doesn't need to know what type of token was burned in order to create
-     * the reissued output. They can call this function on any Reissuable ContractState
+     * the reissued output.
      */
     fun getAllowableReissuanceOutput (
             reissuanceTokenInputs: List<ReissuanceToken>,
             newOwner: AbstractParty
-    ): List<Pair<CommandData, Reissuable>>
+    ): List<Pair<CommandData, ReissuableState>>
 }

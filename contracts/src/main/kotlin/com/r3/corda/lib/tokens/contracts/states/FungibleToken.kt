@@ -2,7 +2,6 @@ package com.r3.corda.lib.tokens.contracts.states
 
 import com.r3.corda.lib.tokens.contracts.FungibleTokenContract
 import com.r3.corda.lib.tokens.contracts.commands.ReissueTokenCommand
-import com.r3.corda.lib.tokens.contracts.commands.TokenCommand
 import com.r3.corda.lib.tokens.contracts.internal.schemas.FungibleTokenSchemaV1
 import com.r3.corda.lib.tokens.contracts.internal.schemas.PersistentFungibleToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
@@ -10,7 +9,9 @@ import com.r3.corda.lib.tokens.contracts.types.TokenPointer
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.getAttachmentIdForGenericParam
 import com.r3.corda.lib.tokens.contracts.utilities.holderString
-import net.corda.core.contracts.*
+import net.corda.core.contracts.Amount
+import net.corda.core.contracts.BelongsToContract
+import net.corda.core.contracts.FungibleState
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
@@ -30,24 +31,23 @@ import net.corda.core.schemas.QueryableState
  *
  * @property amount the [Amount] of [IssuedTokenType] represented by this [FungibleToken].
  * @property holder the [AbstractParty] which has a claim on the issuer of the [IssuedTokenType].
- * @param T the [TokenType] this [FungibleToken] state is in respect of.
  */
 @BelongsToContract(FungibleTokenContract::class)
-open class FungibleToken<T : TokenType>(
-        override val amount: Amount<IssuedTokenType<T>>,
+open class FungibleToken(
+        override val amount: Amount<IssuedTokenType>,
         override val holder: AbstractParty,
         override val tokenTypeJarHash: SecureHash? = amount.token.tokenType.getAttachmentIdForGenericParam()
-) : FungibleState<IssuedTokenType<T>>, AbstractToken<T>, QueryableState, Reissuable {
+) : FungibleState<IssuedTokenType>, AbstractToken, QueryableState, ReissuableState {
 
-    override val tokenType: T get() = amount.token.tokenType
+    override val tokenType: TokenType get() = amount.token.tokenType
 
-    override val issuedTokenType: IssuedTokenType<T> get() = amount.token
+    override val issuedTokenType: IssuedTokenType get() = amount.token
 
     override val issuer: Party get() = amount.token.issuer
 
-    override fun toString(): String = "$amount owned by $holderString"
+    override fun toString(): String = "$amount held by $holderString"
 
-    override fun withNewHolder(newHolder: AbstractParty): FungibleToken<T> {
+    override fun withNewHolder(newHolder: AbstractParty): FungibleToken {
         return FungibleToken(amount = amount, holder = newHolder, tokenTypeJarHash = tokenTypeJarHash)
     }
 
@@ -67,7 +67,7 @@ open class FungibleToken<T : TokenType>(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
-        other as FungibleToken<*>
+        other as FungibleToken
         if (amount != other.amount) return false
         if (holder != other.holder) return false
         if (tokenTypeJarHash != other.tokenTypeJarHash) return false
@@ -82,12 +82,24 @@ open class FungibleToken<T : TokenType>(
         return result
     }
 
-    override fun getAllowableReissuanceOutput(reissuanceTokenInputs: List<ReissuanceToken>,
-                                              newOwner: AbstractParty): List<Pair<ReissueTokenCommand<T>, Reissuable>> {
+    override fun getAllowableReissuanceOutput(
+            reissuanceTokenInputs: List<ReissuanceToken>,
+            newOwner: AbstractParty
+    ): List<Pair<ReissueTokenCommand, ReissuableState>> {
         val singleReissuanceInput = reissuanceTokenInputs.single()
 
-        return listOf(Pair(ReissueTokenCommand(token = amount.token, outputs = listOf(0)), FungibleToken(
-                amount = amount.copy(quantity = (singleReissuanceInput.amount * amount.quantity) / 100), holder = newOwner)))
+        return listOf(
+                Pair(
+                        ReissueTokenCommand(
+                                token = amount.token,
+                                outputs = listOf(0)
+                        ),
+                        FungibleToken(
+                                // TODO : Straight up doesn't work!
+                                amount = amount.copy(quantity = (singleReissuanceInput.amount.toLong() * amount.quantity) / 100),
+                                holder = newOwner
+                        )
+                )
+        )
     }
-
 }

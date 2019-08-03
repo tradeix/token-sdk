@@ -1,7 +1,9 @@
 package com.r3.corda.lib.tokens.contracts.states
 
 import com.r3.corda.lib.tokens.contracts.ProofOfBurnContract
-import net.corda.core.contracts.*
+import net.corda.core.contracts.BelongsToContract
+import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.StateRef
 import net.corda.core.identity.AbstractParty
 
 /**
@@ -14,8 +16,6 @@ import net.corda.core.identity.AbstractParty
  */
 
 @BelongsToContract(ProofOfBurnContract::class)
-data class ProofOfBurn(
-        val burnedStateIndex: Int,
-        val purposeOfBurn: StateRef,
-        override val participants: List<AbstractParty> = listOf()
-) : ContractState
+data class ProofOfBurn(val burnedStateIndex: Int, val purposeOfBurn: StateRef) : ContractState {
+    override val participants: List<AbstractParty> get() = emptyList()
+}

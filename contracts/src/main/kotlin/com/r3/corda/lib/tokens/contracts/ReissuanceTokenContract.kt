@@ -3,22 +3,23 @@ package com.r3.corda.lib.tokens.contracts
 import com.r3.corda.lib.tokens.contracts.states.NonceState
 import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
 import com.r3.corda.lib.tokens.contracts.states.ReissuanceToken
-import net.corda.core.contracts.*
-import net.corda.core.contracts.Requirements.using
-import net.corda.core.cordapp.Cordapp
+import net.corda.core.contracts.CommandData
+import net.corda.core.contracts.Contract
+import net.corda.core.contracts.requireSingleCommand
+import net.corda.core.contracts.requireThat
 import net.corda.core.transactions.LedgerTransaction
 import java.security.PublicKey
 
 
-class ReissuanceTokenContract: Contract {
+class ReissuanceTokenContract : Contract {
 
-    interface ReissuanceTokenCommands: CommandData
+    interface ReissuanceTokenCommands : CommandData
 
-    class IssueReissuanceTokenCommand: ReissuanceTokenCommands
+    class IssueReissuanceTokenCommand : ReissuanceTokenCommands
 
-    class MoveReissuanceTokenCommand: ReissuanceTokenCommands
+    class MoveReissuanceTokenCommand : ReissuanceTokenCommands
 
-    class UseReissuanceTokenCommand: ReissuanceTokenCommands
+    class UseReissuanceTokenCommand : ReissuanceTokenCommands
 
     override fun verify(tx: LedgerTransaction) {
         // One command only for now. Should make more flexible later
@@ -63,10 +64,8 @@ class ReissuanceTokenContract: Contract {
 
         val reissuanceOutputs = tx.outputsOfType<ReissuanceToken>()
 
-        var outputAmount: Long = 0
-        for (token in reissuanceOutputs) outputAmount =+ token.amount
         "Combined amount on ReissuanceToken outputs is less than or equal to the ReissuanceToken input" using
-                (outputAmount <= reissuanceInput.amount)
+                (reissuanceOutputs.map { it.amount }.sum() <= reissuanceInput.amount)
     }
 
     /**

@@ -1,12 +1,15 @@
 package com.r3.corda.lib.tokens.contracts
 
 import com.r3.corda.lib.tokens.contracts.commands.*
-import com.r3.corda.lib.tokens.contracts.states.*
+import com.r3.corda.lib.tokens.contracts.states.AbstractToken
+import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
+import com.r3.corda.lib.tokens.contracts.states.ReissuanceToken
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import net.corda.core.contracts.*
 import net.corda.core.crypto.SecureHash
+import net.corda.core.internal.uncheckedCast
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.utilities.loggerFor
 
@@ -19,9 +22,9 @@ import net.corda.core.utilities.loggerFor
  * amount) and redeemed correctly. [FungibleTokenContract] and [NonFungibleTokenContract] specify their own
  * implementations for issue, move and redeem.
  */
-abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Contract {
+abstract class AbstractTokenContract<AT : AbstractToken> : Contract {
 
-    abstract val accepts: Class<U>
+    abstract val accepts: Class<AT>
 
     /**
      * This method can be overridden to handle additional command types. The assumption here is that only the command
@@ -29,28 +32,28 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
      * are not provided.
      */
     open fun dispatchOnCommand(
-            commands: List<CommandWithParties<TokenCommand<T>>>,
-            tokenInputs: List<IndexedState<U>>,
-            tokenOutputs: List<IndexedState<U>>,
+            commands: List<CommandWithParties<TokenCommand>>,
+            inputs: List<IndexedState<AT>>,
+            outputs: List<IndexedState<AT>>,
             attachments: List<Attachment>,
             burnRefs: List<TransactionState<ProofOfBurn>> = listOf(),
             reissuanceInputs: List<TransactionState<ReissuanceToken>> = listOf(),
             reissuanceOutputs: List<TransactionState<ReissuanceToken>> = listOf()
     ) {
         // Get the JAR which implements the TokenType for this group.
-        val jarHash: SecureHash? = verifyAllTokensUseSameTypeJar(inputs = tokenInputs.map { it.state.data }, outputs = tokenOutputs.map { it.state.data })
+        val jarHash: SecureHash? = verifyAllTokensUseSameTypeJar(inputs = inputs.map { it.state.data }, outputs = outputs.map { it.state.data })
         // This group involves a custom TokenType, so we need to check the correct JAR is attached.
         jarHash?.let { verifyTypeJarPresentInTransaction(jar = jarHash, attachments = attachments) }
         when (commands.first().value) {
-        //verify the type jar presence and correctness
-        // Issuances should only contain one issue command.
-            is IssueTokenCommand<*> -> verifyIssue(commands.single(), tokenInputs, tokenOutputs, attachments)
-        // Moves may contain more than one move command.
-            is MoveTokenCommand<*> -> verifyMove(commands, tokenInputs, tokenOutputs, attachments)
-        // Redeems must only contain one redeem command.
-            is RedeemTokenCommand<*> -> verifyRedeem(commands.single(), tokenInputs, tokenOutputs, attachments)
-        // Reissuances must contain only one reissue command.
-            is ReissueTokenCommand<*> -> verifyReissue(commands.single(), tokenInputs, tokenOutputs, attachments, burnRefs, reissuanceInputs, reissuanceOutputs)
+            //verify the type jar presence and correctness
+            // Issuances should only contain one issue command.
+            is IssueTokenCommand -> verifyIssue(commands.single(), inputs, outputs, attachments)
+            // Moves may contain more than one move command.
+            is MoveTokenCommand -> verifyMove(commands, inputs, outputs, attachments)
+            // Redeems must only contain one redeem command.
+            is RedeemTokenCommand -> verifyRedeem(commands.single(), inputs, outputs, attachments)
+            // Reissuances must contain only one reissue command.
+            is ReissueTokenCommand -> verifyReissue(commands.single(), inputs, outputs, attachments, burnRefs, reissuanceInputs, reissuanceOutputs)
         }
     }
 
@@ -58,34 +61,35 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
      * Provide custom logic for handling issuance of a token. With issuances, the assumption is that only one issuer
      * will be involved in any one issuance, therefore there will only be one [IssueTokenCommand] per group.
      */
-    abstract fun verifyIssue(issueCommand: CommandWithParties<TokenCommand<T>>, inputs: List<IndexedState<U>>, outputs: List<IndexedState<U>>, attachments: List<Attachment>)
+    abstract fun verifyIssue(issueCommand: CommandWithParties<TokenCommand>, inputs: List<IndexedState<AT>>, outputs: List<IndexedState<AT>>, attachments: List<Attachment>)
 
     /**
      * Provide custom logic for handling the moving of a token. More than one move command can be supplied because
      * multiple parties may need to move the same [IssuedTokenType] in one atomic transaction. Each party adds their
      * own command with the required public keys for the tokens they are moving.
      */
-    abstract fun verifyMove(moveCommands: List<CommandWithParties<TokenCommand<T>>>, inputs: List<IndexedState<U>>, outputs: List<IndexedState<U>>, attachments: List<Attachment>)
+    abstract fun verifyMove(moveCommands: List<CommandWithParties<TokenCommand>>, inputs: List<IndexedState<AT>>, outputs: List<IndexedState<AT>>, attachments: List<Attachment>)
 
     /**
      * Provide custom logic for handling the redemption of a token. There is an assumption in that only one issuer will
      * be involved in a single redemption transaction, therefore there will only be one [RedeemTokenCommand] per
      * group of [IssuedTokenType]s.
      */
-    abstract fun verifyRedeem(redeemCommand: CommandWithParties<TokenCommand<T>>, inputs: List<IndexedState<U>>, outputs: List<IndexedState<U>>, attachments: List<Attachment>)
+    abstract fun verifyRedeem(redeemCommand: CommandWithParties<TokenCommand>, inputs: List<IndexedState<AT>>, outputs: List<IndexedState<AT>>, attachments: List<Attachment>)
 
     /**
      * New function that allows tokens to be created without need for an equivalent amount and type of tokens
      * to be consumed in the same transaction. We allow this by referencing the fact that the correct amount and type
      * of tokens have already been burnt elsewhere and the token to unclok them is now being consumed as well
      */
-    abstract fun verifyReissue(reissueCommand: CommandWithParties<TokenCommand<T>>,
-                               tokenInputs: List<IndexedState<U>>,
-                               tokenOutputs: List<IndexedState<U>>,
-                               attachments: List<Attachment>,
-                               burnRefs: List<TransactionState<ProofOfBurn>>,
-                               reissueInputs: List<TransactionState<ReissuanceToken>>,
-                               reissueOutputs: List<TransactionState<ReissuanceToken>>
+    abstract fun verifyReissue(
+            reissueCommand: CommandWithParties<TokenCommand>,
+            tokenInputs: List<IndexedState<AT>>,
+            tokenOutputs: List<IndexedState<AT>>,
+            attachments: List<Attachment>,
+            burnRefs: List<TransactionState<ProofOfBurn>>,
+            reissueInputs: List<TransactionState<ReissuanceToken>>,
+            reissueOutputs: List<TransactionState<ReissuanceToken>>
     )
 
     final override fun verify(tx: LedgerTransaction) {
@@ -95,7 +99,7 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
         // token type. The type is specified explicitly to aid understanding.
         val groups = groupStates(tx) { TokenInfo(it.state.data.javaClass, it.state.data.issuedTokenType, it.state.contract) }
         // A list of only the commands which implement TokenCommand.
-        val tokenCommands = tx.commands.select<TokenCommand<T>>()
+        val tokenCommands = tx.commands.select<TokenCommand>()
         require(tokenCommands.isNotEmpty()) { "There must be at least one token command in this transaction." }
         // As inputs and outputs are just "bags of states" and the InOutGroups do not contain commands, we must match
         // the TokenCommand to each InOutGroup. There should be at least a single command for each group. If there
@@ -103,9 +107,10 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
         // than one command. However, for issuances and redemptions we would expect to see only one command.
 
         val groupsAndCommands = groups.map { group ->
-            val matchedCommands: List<CommandWithParties<TokenCommand<T>>> = tokenCommands.filter { groupMatchesCommand(it, group) }
+            val matchedCommands: List<CommandWithParties<TokenCommand>> = tokenCommands.filter { groupMatchesCommand(it, group) }
             matchedCommands to group
         }
+
 
         groupsAndCommands.forEach { (commands, group) ->
             require(commands.isNotEmpty()) { "There is a token group with no assigned command!" }
@@ -114,10 +119,9 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
                         "TokenCommand type per group! For example: You cannot map an Issue AND a Move command " +
                         "to one group of tokens in a transaction."
             }
-            if (commands.single().value !is ReissueTokenCommand<*>) {
+            if (commands.single().value !is ReissueTokenCommand) {
                 dispatchOnCommand(commands, group.inputs, group.outputs, tx.attachments)
-            }
-            else {
+            } else {
                 // If it's a reissuance, the token contract needs to care about more than just what's in the token
                 // InOutGroup. Specifically, it will need to look at the relevant TokenBurn and ReissuanceToken states
 
@@ -137,12 +141,12 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
         val allMatchedCommands = groupsAndCommands.map { it.first.first() }.toSet()
         val extraCommands = (tokenCommands - allMatchedCommands).toSet()
         if (extraCommands.isNotEmpty()) {
-            loggerFor<AbstractTokenContract<T, U>>().warn("Unprocessed commands: ${extraCommands}")
+            loggerFor<AbstractTokenContract<AT>>().warn("Unprocessed commands: ${extraCommands}")
         }
 
     }
 
-    private fun groupMatchesCommand(it: CommandWithParties<TokenCommand<T>>, group: IndexedInOutGroup<U, TokenInfo>): Boolean {
+    private fun groupMatchesCommand(it: CommandWithParties<TokenCommand>, group: IndexedInOutGroup<AbstractToken, TokenInfo>): Boolean {
         return it.value.token == group.groupingKey.issuedTokenType && it.value.inputIndicies() == group.inputIndicies && it.value.outputIndicies() == group.outputIndicies
 
     }
@@ -151,12 +155,12 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
         require(jar in attachments.map { it.id }) { "Expected to find type jar: $jar in transaction attachment list, but did not" }
     }
 
-    private fun verifyAllTokensUseSameTypeJar(inputs: List<AbstractToken<T>>, outputs: List<AbstractToken<T>>): SecureHash? {
+    private fun verifyAllTokensUseSameTypeJar(inputs: List<AbstractToken>, outputs: List<AbstractToken>): SecureHash? {
         val inputsAndOutputs = inputs + outputs
-        val tokenTypes = inputsAndOutputs.map(AbstractToken<*>::tokenType).toSet()
+        val tokenTypes = inputsAndOutputs.map(AbstractToken::tokenType).toSet()
 
         require(tokenTypes.size == 1) { "There should only be one TokenType per group" }
-        val jarHashes = inputsAndOutputs.map(AbstractToken<*>::tokenTypeJarHash).toSet()
+        val jarHashes = inputsAndOutputs.map(AbstractToken::tokenTypeJarHash).toSet()
         require(jarHashes.size == 1) {
             "There must be exactly one Jar (Hash) providing extended TokenType: ${outputs.first().tokenType.tokenIdentifier} / ${outputs.first().tokenType.javaClass}"
         }
@@ -171,7 +175,7 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
         return jarHashes.single()
     }
 
-    private fun groupStates(tx: LedgerTransaction, selector: (IndexedState<U>) -> TokenInfo): List<IndexedInOutGroup<U, TokenInfo>> {
+    private fun groupStates(tx: LedgerTransaction, selector: (IndexedState<AT>) -> TokenInfo): List<IndexedInOutGroup<AT, TokenInfo>> {
         val inputsToVerify = (0 until tx.inputs.size).map { it to tx.inputs[it].state }.mapNotNull { castIfPossible(it) }
         val outputsToVerify = (0 until tx.outputs.size).map { it to tx.outputs[it] }.mapNotNull { castIfPossible(it) }
         val inGroups = inputsToVerify.groupBy(selector)
@@ -184,15 +188,15 @@ abstract class AbstractTokenContract<T : TokenType, U : AbstractToken<T>> : Cont
         return groups
     }
 
-    private data class TokenInfo(val concreteClass: Class<*>, val issuedTokenType: IssuedTokenType<TokenType>, val contractClass: ContractClassName)
+    private data class TokenInfo(val concreteClass: Class<*>, val issuedTokenType: IssuedTokenType, val contractClass: ContractClassName)
 
     //This function checks that the underlying State is of a specific type, whilst returning the TransactionState that wraps it
     //it also enforces the fact that each state is of a type accepted by the current concrete contract class
-    private fun castIfPossible(pair: Pair<Int, TransactionState<ContractState>>): IndexedState<U>? {
+    private fun castIfPossible(pair: Pair<Int, TransactionState<ContractState>>): IndexedState<AT>? {
         val input = pair.second
         val index = pair.first
         return if (AbstractToken::class.java.isInstance(input.data) && accepts.isInstance(input.data)) {
-            IndexedState(input as TransactionState<U>, index)
+            IndexedState(uncheckedCast(input), index)
         } else {
             null
         }
