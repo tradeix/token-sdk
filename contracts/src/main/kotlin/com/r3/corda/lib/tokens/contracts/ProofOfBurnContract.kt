@@ -17,7 +17,7 @@ class ProofOfBurnContract : Contract {
 
     companion object {
         @JvmStatic
-        val contractId = ProofOfBurnContract::class.qualifiedName!!
+        val ID: ContractClassName = ProofOfBurnContract::class.qualifiedName!!
     }
 
     class IssueBurnCommand : TypeOnlyCommandData()

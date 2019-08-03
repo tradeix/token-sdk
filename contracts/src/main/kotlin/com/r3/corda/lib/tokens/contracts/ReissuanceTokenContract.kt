@@ -3,15 +3,17 @@ package com.r3.corda.lib.tokens.contracts
 import com.r3.corda.lib.tokens.contracts.states.NonceState
 import com.r3.corda.lib.tokens.contracts.states.ProofOfBurn
 import com.r3.corda.lib.tokens.contracts.states.ReissuanceToken
-import net.corda.core.contracts.CommandData
-import net.corda.core.contracts.Contract
-import net.corda.core.contracts.requireSingleCommand
-import net.corda.core.contracts.requireThat
+import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
 import java.security.PublicKey
 
 
 class ReissuanceTokenContract : Contract {
+
+    companion object {
+        @JvmStatic
+        val ID: ContractClassName = ReissuanceTokenContract::class.qualifiedName!!
+    }
 
     interface ReissuanceTokenCommands : CommandData
 
@@ -78,17 +80,18 @@ class ReissuanceTokenContract : Contract {
      * can be change returned if the percentageAmount burned is less than the percentageAmount on the ReissuanceToken
      */
     private fun verifyUse(tx: LedgerTransaction, signers: Set<PublicKey>) = requireThat {
-        val reissuanceInput = tx.inputsOfType<ReissuanceToken>().single()
+        "One reissuance token must be consumed." using (tx.inputsOfType<ReissuanceToken>().size == 1)
+        "One reissuance token must be created." using (tx.outputsOfType<ReissuanceToken>().size == 1)
+        "One proof-of-burn state must be referenced." using (tx.referenceInputRefsOfType<ProofOfBurn>().size == 1)
 
-        "One reissuance token is consumed as input" using (tx.inputsOfType<ReissuanceToken>().size == 1)
-        "One reissuance token is created on output" using (tx.outputsOfType<ReissuanceToken>().size <= 1)
+        val reissuanceInput = tx.inputsOfType<ReissuanceToken>().single()
+        val reissuanceOutput = tx.outputsOfType<ReissuanceToken>().single()
+        val proofOfBurnReference = tx.referenceInputRefsOfType<ProofOfBurn>().single()
 
         "Owner of reissuance input is on the list of signers" using
                 (reissuanceInput.owner.owningKey in signers)
 
         "The reissuance output lists the referenced ProofOfBurn as one of the used burns" using
-                (tx.referenceInputRefsOfType<ProofOfBurn>().single().state in tx.outputsOfType<ReissuanceToken>().first().usedProofs)
-
-
+                (proofOfBurnReference.state in reissuanceOutput.usedProofs)
     }
 }

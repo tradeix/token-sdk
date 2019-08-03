@@ -1,6 +1,6 @@
 package com.r3.corda.lib.tokens.contracts.states
 
-import com.r3.corda.lib.tokens.contracts.NonceStateContract
+import com.r3.corda.lib.tokens.contracts.NonceContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.AbstractParty
@@ -16,7 +16,7 @@ import java.util.*
  * malicious and force in a UUID that has been used before as the notary will refuse to sign a state with the same
  * StateRef when it is used in a subsequent transaction
  */
-@BelongsToContract(NonceStateContract::class)
+@BelongsToContract(NonceContract::class)
 data class NonceState(val nonce: UUID = UUID.randomUUID()) : ContractState {
     override val participants: List<AbstractParty> get() = emptyList()
 }

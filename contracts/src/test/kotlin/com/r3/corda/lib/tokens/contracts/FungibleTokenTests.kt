@@ -14,6 +14,7 @@ import com.r3.corda.lib.tokens.testing.states.DodgeToken
 import com.r3.corda.lib.tokens.testing.states.DodgeTokenContract
 import com.r3.corda.lib.tokens.testing.states.RUB
 import com.r3.corda.lib.tokens.testing.states.RubleToken
+import org.junit.Ignore
 import org.junit.Test
 
 // TODO: Some of these tests are testing AbstractToken and should be moved into the super-class.

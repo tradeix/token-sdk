@@ -1,10 +1,7 @@
 package com.r3.corda.lib.tokens.contracts.states
 
 import com.r3.corda.lib.tokens.contracts.ReissuanceTokenContract
-import net.corda.core.contracts.BelongsToContract
-import net.corda.core.contracts.ContractState
-import net.corda.core.contracts.StateRef
-import net.corda.core.contracts.TransactionState
+import net.corda.core.contracts.*
 import net.corda.core.identity.AbstractParty
 
 /**
@@ -45,13 +42,13 @@ data class ReissuanceToken(
 
 
     fun spend(
-            newOwners: Map<AbstractParty, Long>,
-            additionalParticipants: List<AbstractParty>
+            newOwners: Map<AbstractParty, Double>,
+            additionalParticipants: List<AbstractParty> = emptyList()
     ): List<ReissuanceToken> {
         val newOwnersTotal = newOwners.values.sum()
 
-        check(newOwnersTotal > percentageAmount) {
-            "Cannot reissue more than the initial percentageAmount: $percentageAmount"
+        check(newOwnersTotal <= amount) {
+            "Cannot reissue more than the initial amount: $amount"
         }
 
         val resultTokens = newOwners.map {
@@ -61,5 +58,16 @@ data class ReissuanceToken(
         return if (newOwnersTotal < percentageAmount) {
             resultTokens + ReissuanceToken(owner, reissueKey, percentageAmount - newOwnersTotal, usedProofs)
         } else resultTokens
+    }
+
+    fun withdraw(
+            reissuable: ReissuableState,
+            proofOfBurn: Iterable<TransactionState<ProofOfBurn>>,
+            newOwner: AbstractParty = owner
+    ): Pair<ReissuanceToken, List<Pair<CommandData, ReissuableState>>> {
+        return Pair(
+                copy(usedProofs = usedProofs + proofOfBurn),
+                reissuable.getAllowableReissuanceOutput(listOf(this), newOwner)
+        )
     }
 }

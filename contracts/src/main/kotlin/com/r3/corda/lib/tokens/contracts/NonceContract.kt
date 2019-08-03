@@ -11,7 +11,7 @@ import net.corda.core.transactions.LedgerTransaction
  * ID multiple times.
  */
 
-class NonceStateContract : Contract {
+class NonceContract : Contract {
 
     companion object {
         @JvmStatic

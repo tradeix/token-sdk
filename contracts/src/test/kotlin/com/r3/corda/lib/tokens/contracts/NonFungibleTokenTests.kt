@@ -10,6 +10,7 @@ import com.r3.corda.lib.tokens.contracts.utilities.withNewHolder
 import com.r3.corda.lib.tokens.money.USD
 import com.r3.corda.lib.tokens.testing.states.PTK
 import com.r3.corda.lib.tokens.testing.states.RUB
+import org.junit.Ignore
 import org.junit.Test
 
 // TODO: Some of these tests are testing AbstractToken and duplicate those in FungibleTokenTests. Move to superclass.
