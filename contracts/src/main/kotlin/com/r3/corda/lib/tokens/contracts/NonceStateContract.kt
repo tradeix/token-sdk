@@ -3,7 +3,6 @@ package com.r3.corda.lib.tokens.contracts
 import com.r3.corda.lib.tokens.contracts.states.NonceState
 import net.corda.core.contracts.*
 import net.corda.core.transactions.LedgerTransaction
-import java.security.PublicKey
 
 /**
  * This class is one of a few ways to leverage implicit trust in the notary to ensure uniqueness of state identifiers.
@@ -12,13 +11,18 @@ import java.security.PublicKey
  * ID multiple times.
  */
 
-class NonceStateContract: Contract {
+class NonceStateContract : Contract {
 
-    interface NonceStateCommands: CommandData
+    companion object {
+        @JvmStatic
+        val ID: ContractClassName = this::class.java.enclosingClass.canonicalName
+    }
 
-    class IssueNonceStateCommand: NonceStateCommands
+    interface NonceStateCommands : CommandData
 
-    class UseNonceStateCommand: NonceStateCommands
+    class IssueNonceStateCommand : NonceStateCommands
+
+    class UseNonceStateCommand : NonceStateCommands
 
     /**
      * Simple function to ensure no nonce states are used during issuance and none are issued while using others
@@ -42,6 +46,9 @@ class NonceStateContract: Contract {
     }
 
     private fun verifyUse(tx: LedgerTransaction) = requireThat {
+        "At least one nonce state should be consumed" using
+                (tx.inputsOfType<NonceState>().isNotEmpty())
+
         "No nonce state outputs should be created when a nonce state is being used as an input" using
                 (tx.outputsOfType<NonceState>().isEmpty())
     }
