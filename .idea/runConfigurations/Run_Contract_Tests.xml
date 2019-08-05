@@ -1,6 +1,5 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Run Contract Tests" type="JUnit" factoryName="JUnit">
-    <module name="token-sdk.contracts.test" />
     <option name="PACKAGE_NAME" value="com.r3.corda.lib.tokens.contracts" />
     <option name="MAIN_CLASS_NAME" value="" />
     <option name="METHOD_NAME" value="" />

@@ -18,13 +18,13 @@ class ReissuanceTokenTests : ContractTestCommon() {
 
     val ref = StateRef(SecureHash.randomSHA256(), 0)
 
-    val pob = ProofOfBurn(Pair(
-            TransactionState(
+    val pob = ProofOfBurn(
+            burnedTxState = TransactionState(
                     800 of burnedToken heldBy ALICE.party,
                     FungibleTokenContract.contractId,
-                    NOTARY.party
-            ), 0
-    ), ref)
+                    NOTARY.party),
+            burnedStateIndex = 0,
+            purposeOfBurn =  ref)
 
     val pobTx = TransactionState(pob, ProofOfBurnContract.ID, NOTARY.party)
 
@@ -80,7 +80,7 @@ class ReissuanceTokenTests : ContractTestCommon() {
             output(ReissuanceTokenContract.ID, token)
             command(ALICE.publicKey, NonceContract.UseNonceStateCommand())
             command(ALICE.publicKey, ReissuanceTokenContract.MoveReissuanceTokenCommand())
-            `fails with`("Combined amount on ReissuanceToken outputs is less than or equal to the ReissuanceToken input")
+            `fails with`("Combined percentageAmount on ReissuanceToken outputs is less than or equal to the ReissuanceToken input")
         }
     }
 

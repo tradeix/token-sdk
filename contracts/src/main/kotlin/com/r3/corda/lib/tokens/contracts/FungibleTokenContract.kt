@@ -161,11 +161,11 @@ open class FungibleTokenContract : AbstractTokenContract<FungibleToken>() {
 
         require(proofOfBurn.size == 1) { "When reissuing tokens, there must be only one burning state present." }
 
-        require(proofOfBurn.single().burnedState.first.data is FungibleToken) {
+        require(proofOfBurn.single().burnedTxState.data is FungibleToken) {
             "The token that was burned must be a FungibleToken."
         }
 
-        val burnedFungibleToken = proofOfBurn.single().burnedState.first as TransactionState<FungibleToken>
+        val burnedFungibleToken = proofOfBurn.single().burnedTxState as TransactionState<FungibleToken>
 
         require(tokenOutputs.single().state.data.amount.quantity == reissuanceInputs.single().data.percentageAmount * burnedFungibleToken.data.amount.quantity / 100) {
             "Reissued fungible token amount must be equal to the reissuance token percentage of the burned state amount."

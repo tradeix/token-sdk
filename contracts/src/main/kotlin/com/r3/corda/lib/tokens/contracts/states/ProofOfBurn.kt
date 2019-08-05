@@ -18,7 +18,8 @@ import net.corda.core.identity.AbstractParty
 
 @BelongsToContract(ProofOfBurnContract::class)
 data class ProofOfBurn(
-        val burnedState: Pair<TransactionState<ReissuableState>, Int>,
+        val burnedTxState: TransactionState<ReissuableState>,
+        val burnedStateIndex: Int,
         val purposeOfBurn: StateRef) : ContractState {
     override val participants: List<AbstractParty> get() = emptyList()
 }
